@@ -9,18 +9,21 @@ threads = []
 def serverMsg(sock): #sends messages from other clients to everyone else
     while len(messages) > 0:
         "{0} said: {1}"
-        sock.send(messages[0])
+        sock.send(messages[0].encode())
         messages.pop()
 
 def clientCode(connection, ar): # recieves messages from client, and checks for pass code
     pcode = connection.recv(1024)
     if not pcode == ar.passcode:
-
+        message = "bad"
+        connection.send(message.encode())
         connection.close()
     else:
-        username = connection.recv(1024)
+        message = "good"
+        connection.send(message.encode())
+        username = connection.recv(1024).decode()
         while True:
-            message = connection.recv(1024)
+            message = connection.recv(1024).decode()
             print("{0}: {1}".format(username, message))
             sys.stdout.flush()
 
@@ -43,7 +46,7 @@ def main():
     sock.bind((host, port))
     print("Server started on port {}. Accepting connections".format(args.port))
     sys.stdout.flush()
-    sock.listen(25) #25 is arbitrary value
+    sock.listen(15) #25 is arbitrary value
 
     s = threading.Thread(target=serverMsg, args=(sock))
 

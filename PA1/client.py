@@ -10,21 +10,23 @@ def receiveThing(connection,args):
         sys.stdout.flush()
 
 def sendThing(connection,args):
-    message = input("{0}: ".format(args.username))
-    connection.send(message.encode())
+    while True:
+        message = input("{0}: ".format(args.username))
+
+        connection.send(message.encode())
 
 def main():
     #python3 client.py -join -host <hostname> -port <port> -username <username> -passcode <passcode>
     parser = argparse.ArgumentParser()
     parser.add_argument('-join', nargs='?', const='', required=True)
     parser.add_argument('-hostname', required=True,type=str)
-    parser.add_argument('-port', required=True,type=str)
+    parser.add_argument('-port', required=True,type=int)
     parser.add_argument('-username', required=True)
     parser.add_argument('-passcode', required=True)
     args = parser.parse_args()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(args.hostname, args.port)
+    sock.connect((args.hostname, args.port))
     print('Connected to {} on port {}'.format(args.hostname, args.port))
     sys.stdout.flush()
 
@@ -39,7 +41,7 @@ def main():
         s = threading.Thread(target=sendThing, args=(sock,args))
         r = threading.Thread(target=receiveThing, args=(sock,args))
         s.start()
-        s.close()
+        r.start()
 
 
 

@@ -3,16 +3,21 @@ import threading
 import sys
 import argparse
 
+index = -1
 def receiveThing(connection,args):
     while True:
-        message = connection.recv(1024).decode()
-        print(message)
-        sys.stdout.flush()
+        data = connection.recv(1024).decode().split(":")
+        message = data[1:]
+        cidx = int(data[0])
+
+        if not cidx == index:
+            print(message)
+            sys.stdout.flush()
 
 def sendThing(connection,args):
     while True:
         message = input("{0}: ".format(args.username))
-
+        message = str(index) + ":" + message
         connection.send(message.encode())
 
 def main():
@@ -36,6 +41,8 @@ def main():
         sys.stdout.flush()
         sock.close()
     else:
+        index = sock.recv(1024).decode()
+        index = int(index)
         sock.send(args.username.encode())
 
         s = threading.Thread(target=sendThing, args=(sock,args))

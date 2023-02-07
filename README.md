@@ -6,9 +6,10 @@ Adam Sumilong (adamsumi@gatech.edu)
 Gabby Calderon (gcalderon7@gatech.edu)
 
 Todo:
-1) Figure out socket library documentation
-2) Have client connect and authenticate w/ passcode
-3) Send Messages
+1) Figure out socket library documentation --Done
+2) Have client connect and authenticate w/ passcode -- done
+3) Send Messages -- done
+4) have SERVER SEND MESSAGES --> Current TODO
 4) threading for multiple clients
 5) fancy text stuff
 

@@ -3,33 +3,43 @@ import threading
 import sys
 import argparse
 
+idx= 0
 messages = []
 threads = []
+connections =[]
 #brain dump for potential server code
+def sendToClients(message,cid):
+    print(cid)
+    sys.stdout.flush()
+    for con in connections:
+        if cid not in con:
+            con[0].send(message)
 def serverMsg(sock): #sends messages from other clients to everyone else
     while True:
         if len(messages) > 0:
-            for th in threads:
-                th.args[0].send(messages[0].encode())
+            sock[0].send(messages[0])
+            sendToClients(messages[0])
             messages.pop()
 
-def clientCode(connection, ar, index): # recieves messages from client, and checks for pass code
+def clientCode(connection, ar, idx): # recieves messages from client, and checks for pass code
     pcode = connection.recv(1024).decode()
     if not pcode == ar.passcode:
-        message = "bad"
-        connection.send(message.encode())
+        connection.send("bad".encode())
         connection.close()
     else:
-        message = str(index)
-        connection.send(message.encode())
+        #message = str(index)
+        connection.send(str(idx).encode())
         username = connection.recv(1024).decode()
+        messages.append("{} has joined the chatroom".format(username))
 
-    while True:
-        message = connection.recv(1024).decode()
-        print("{0}: {1}".format(username, message))
-        sys.stdout.flush()
+        while True:
+            msg = connection.recv(1024).decode().split("|")
+            ci = int(msg[0])
+            message = "".join(msg[1:])
+            print("{}".format(message))
+            sys.stdout.flush()
 
-        messages.append(message)
+            messages.append(message)
 
 
 def main():
@@ -53,10 +63,13 @@ def main():
     s = threading.Thread(target=serverMsg, args=(sock, args))
     while True:
         connection, address = sock.accept()
-        t = threading.Thread(target=clientCode, args=(connection, args, idx))
+        print("Something accepted")
+        sys.stdout.flush()
+        connections.append((connection,idx))
+        t = threading.Thread(target=clientCode, args=(connection, args, idx), daemon=True)
         threads.append(t)
         t.start()
-        idx += 1
+        idx+=1
 
     sock.close()
 

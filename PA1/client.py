@@ -4,21 +4,19 @@ import sys
 import argparse
 
 index = -1
-def receiveThing(connection,args):
-    while True:
-        data = connection.recv(1024).decode().split(":")
-        message = data[1:]
-        cidx = int(data[0])
 
-        if not cidx == index:
-            print(message)
-            sys.stdout.flush()
 
 def sendThing(connection,args):
     while True:
-        message = input("{0}: ".format(args.username))
-        message = str(index) + ":" + message
+        message = input("{}: ".format(args.username))
+        message = "{}|{}: ".format(index, args.username) + message
         connection.send(message.encode())
+
+def receiveThing(connection,args):
+    while True:
+        message = connection.recv(1024).decode()
+        print(message)
+        sys.stdout.flush()
 
 def main():
     #python3 client.py -join -host <hostname> -port <port> -username <username> -passcode <passcode>
@@ -36,13 +34,12 @@ def main():
     sys.stdout.flush()
 
     sock.send(args.passcode.encode())
-    if sock.recv(1024).decode() == "bad":
+    res = sock.recv(1024).decode()
+    if res == "bad":
         print('Password authentication failed.')
         sys.stdout.flush()
-        sock.close()
-    else:
-        index = sock.recv(1024).decode()
-        index = int(index)
+    elif not res == "bad":
+        index = int(res)
         sock.send(args.username.encode())
 
         s = threading.Thread(target=sendThing, args=(sock,args))

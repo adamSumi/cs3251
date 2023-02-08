@@ -5,6 +5,7 @@ import argparse
 
 idx= 0
 messages = []
+usernames = []
 threads = []
 connections =[]
 #brain dump for potential server code
@@ -27,16 +28,17 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
         connection.send("bad".encode())
         connection.close()
     else:
-        #message = str(index)
         connection.send(str(idx).encode())
         username = connection.recv(1024).decode()
         messages.append("{} has joined the chatroom".format(username))
+        print("{} has joined the chatroom".format(username))
+        sys.stdout.flush()
 
-        while True:
+        while True: #messages should be sendings as "{idx}|{username}: {message}"
             msg = connection.recv(1024).decode().split("|")
             ci = int(msg[0])
             message = "".join(msg[1:])
-            print("{}".format(message))
+            print("{}".format(message)) #prints message server side
             sys.stdout.flush()
 
             messages.append(message)
@@ -63,8 +65,8 @@ def main():
     s = threading.Thread(target=serverMsg, args=(sock, args))
     while True:
         connection, address = sock.accept()
-        print("Something accepted")
-        sys.stdout.flush()
+        #print("Something accepted")
+        #sys.stdout.flush()
         connections.append((connection,idx))
         t = threading.Thread(target=clientCode, args=(connection, args, idx), daemon=True)
         threads.append(t)

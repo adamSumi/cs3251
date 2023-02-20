@@ -64,6 +64,10 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 print("{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
                 sys.stdout.flush()
                 sendToClients(user, "{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
+            elif msg[0] == "\\":
+                print("{}: {}".format(user, msg[1:]))
+                sys.stdout.flush()
+                sendToClients(user, "{}: {}".format(user, msg[1:]))
             else:
                 print("{} says: {}".format(user, msg))
                 sys.stdout.flush()

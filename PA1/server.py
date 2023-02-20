@@ -24,11 +24,11 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
         connection.send("good".encode())
         username = connection.recv(1024).decode()
         connections[username] = connection
-        messages.append("{} has joined the chatroom".format(username))
-        print("{} has joined the chatroom".format(username))
+        messages.append("{} joined the chatroom".format(username))
+        print("{} joined the chatroom".format(username))
         sys.stdout.flush()
 
-        sendToClients(username,"{} has joined the chatroom".format(username))
+        sendToClients(username,"{} joined the chatroom".format(username))
 
         while True: #messages should be recieved as "{username}: {message}"
             data = connection.recv(1024).decode().split(": ")
@@ -85,11 +85,11 @@ def main():
     parser.add_argument('-passcode', required=True)
     args = parser.parse_args()
 
-    host = '127.0.0.1'
+    hostname = '127.0.0.1'
     port = args.port
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, port))
+    sock.bind((hostname, port))
     print("Server started on port {}. Accepting connections".format(args.port))
     sys.stdout.flush()
     sock.listen(15) #25 is arbitrary value

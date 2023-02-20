@@ -7,20 +7,26 @@ r = -1
 threads = []
 #lock = threading.Lock()
 def sendThing(connection,args):
-    r = threading.Thread(target=receiveThing, args=(connection,args),daemon=True)
-    r.start()
     while True:
-        message = input("")
-        message = "{}: ".format(args.username) + message
-        connection.send(message.encode())
-        if message == ":Exit":
+        try:
+            message = input("")
+            message = "{}: ".format(args.username) + message
+            connection.send(message.encode())
+            if message == ":Exit":
+                break
+        except:
             break
 
 def receiveThing(connection,args):
     while True:
-        message = connection.recv(1024).decode()
-        print(message)
-        sys.stdout.flush()
+        try:
+            message = connection.recv(1024).decode()
+            if message == "server-quit":
+                break
+            print(message)
+            sys.stdout.flush()
+        except:
+            break
 
 def main():
     #python3 client.py -join -hostname <hostname> -port <port> -username <username> -passcode <passcode>
@@ -46,9 +52,9 @@ def main():
         sock.send(args.username.encode())
 
         s = threading.Thread(target=sendThing, args=(sock,args))
-
+        r = threading.Thread(target=receiveThing, args=(sock,args))
         s.start()
-        #r.start()
+        r.start()
         threads.append(s)
         threads.append(r)
 

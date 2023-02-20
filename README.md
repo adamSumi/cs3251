@@ -12,7 +12,7 @@ Todo:
 4) have SERVER SEND MESSAGES -- done
 4) threading for multiple clients -- done
 5) fancy text stuff -- some done, TODO
-6) how to close cleanly on client side -- TODO
+6) how to close cleanly on client side -- done
 
 Process:
 Server on -> client on -> client connect/authenticate =>

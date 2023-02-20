@@ -34,6 +34,7 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
             user = data[0]
             msg = "".join(data[1:])
             if msg == ":Exit":
+                connection.send("server-quit".encode())
                 connections[user].close()
                 del connections[user]
                 print("{} has left the chat".format(user))

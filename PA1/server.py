@@ -2,6 +2,7 @@ import socket
 import threading
 import sys
 import argparse
+from datetime import date, datetime
 
 idx= 0
 messages = [] #[idx, message w/ user]
@@ -41,10 +42,23 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 sys.stdout.flush()
                 sendToClients(user, "{} has left the chat".format(user))
                 break
-            else:
-                print("{} says: {}".format(user, msg))
+            elif msg == ":)":
+                print("{}: [feeling happy]".format(user))
                 sys.stdout.flush()
-                sendToClients(user, "{} says: {}".format(user, msg))
+                sendToClients(user, "{}: [feeling happy]".format(user))
+            elif msg == ":(":
+                print("{}: [feeling sad]".format(user))
+                sys.stdout.flush()
+                sendToClients(user, "{}: [feeling sad]".format(user))
+            elif msg == ":mytime":
+                today = datetime.now()
+                print("{}: {}".format(user, today.strftime("%C")))
+                sys.stdout.flush()
+                sendToClients(user, "{}: {}".format(user, today.strftime("%C")))
+            else:
+                print("{}: {}".format(user, msg))
+                sys.stdout.flush()
+                sendToClients(user, "{}: {}".format(user, msg))
             #print("{}".format(message)) #prints message server side
 
             #rint(msg)

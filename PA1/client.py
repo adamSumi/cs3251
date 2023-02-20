@@ -3,14 +3,18 @@ import threading
 import sys
 import argparse
 
-index = -1
-
-
+r = -1
+threads = []
+#lock = threading.Lock()
 def sendThing(connection,args):
+    r = threading.Thread(target=receiveThing, args=(connection,args),daemon=True)
+    r.start()
     while True:
-        message = input("{}: ".format(args.username))
-        message = "{}|{}: ".format(index, args.username) + message
+        message = input("")
+        message = "{}: ".format(args.username) + message
         connection.send(message.encode())
+        if message == ":Exit":
+            break
 
 def receiveThing(connection,args):
     while True:
@@ -19,7 +23,7 @@ def receiveThing(connection,args):
         sys.stdout.flush()
 
 def main():
-    #python3 client.py -join -host <hostname> -port <port> -username <username> -passcode <passcode>
+    #python3 client.py -join -hostname <hostname> -port <port> -username <username> -passcode <passcode>
     parser = argparse.ArgumentParser()
     parser.add_argument('-join', nargs='?', const='', required=True)
     parser.add_argument('-hostname', required=True,type=str)
@@ -39,13 +43,14 @@ def main():
         print('Password authentication failed.')
         sys.stdout.flush()
     elif not res == "bad":
-        index = int(res)
         sock.send(args.username.encode())
 
         s = threading.Thread(target=sendThing, args=(sock,args))
-        r = threading.Thread(target=receiveThing, args=(sock,args))
+
         s.start()
-        r.start()
+        #r.start()
+        threads.append(s)
+        threads.append(r)
 
 
 

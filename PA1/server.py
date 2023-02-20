@@ -4,44 +4,49 @@ import sys
 import argparse
 
 idx= 0
-messages = []
+messages = [] #[idx, message w/ user]
 usernames = []
 threads = []
-connections =[]
+connections ={}
 #brain dump for potential server code
-def sendToClients(message,cid):
-    print(cid)
-    sys.stdout.flush()
-    for con in connections:
-        if cid not in con:
-            con[0].send(message)
-def serverMsg(sock): #sends messages from other clients to everyone else
-    while True:
-        if len(messages) > 0:
-            sock[0].send(messages[0])
-            sendToClients(messages[0])
-            messages.pop()
+def sendToClients(user, message):
+    for client in connections:
+        if not client == user:
+            connections[client].send(message.encode())
+
 
 def clientCode(connection, ar, idx): # recieves messages from client, and checks for pass code
     pcode = connection.recv(1024).decode()
     if not pcode == ar.passcode:
         connection.send("bad".encode())
-        connection.close()
     else:
-        connection.send(str(idx).encode())
+        connection.send("good".encode())
         username = connection.recv(1024).decode()
+        connections[username] = connection
         messages.append("{} has joined the chatroom".format(username))
         print("{} has joined the chatroom".format(username))
         sys.stdout.flush()
 
-        while True: #messages should be sendings as "{idx}|{username}: {message}"
-            msg = connection.recv(1024).decode().split("|")
-            ci = int(msg[0])
-            message = "".join(msg[1:])
-            print("{}".format(message)) #prints message server side
-            sys.stdout.flush()
+        sendToClients(username,"{} has joined the chatroom".format(username))
 
-            messages.append(message)
+        while True: #messages should be recieved as "{username}: {message}"
+            data = connection.recv(1024).decode().split(": ")
+            user = data[0]
+            msg = "".join(data[1:])
+            if msg == ":Exit":
+                connections[user].close()
+                del connections[user]
+                print("{} has left the chat".format(user))
+                sys.stdout.flush()
+                sendToClients(user, "{} has left the chat".format(user))
+                break
+            else:
+                print("{} says: {}".format(user, msg))
+                sys.stdout.flush()
+                sendToClients(user, "{} says: {}".format(user, msg))
+            #print("{}".format(message)) #prints message server side
+
+            #rint(msg)
 
 
 def main():
@@ -62,13 +67,12 @@ def main():
     sock.listen(15) #25 is arbitrary value
 
     idx = 0
-    s = threading.Thread(target=serverMsg, args=(sock, args))
     while True:
         connection, address = sock.accept()
         #print("Something accepted")
         #sys.stdout.flush()
-        connections.append((connection,idx))
-        t = threading.Thread(target=clientCode, args=(connection, args, idx), daemon=True)
+        #connections.append((connection,idx))
+        t = threading.Thread(target=clientCode, args=(connection, args, idx))
         threads.append(t)
         t.start()
         idx+=1

@@ -16,3 +16,5 @@ Todo:
 Process:
 Server on -> client on -> client connect/authenticate =>
 client sends message -> server recieves -> server sends to others -> rinse and repeat
+
+TODO: ADD LOCKS

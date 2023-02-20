@@ -9,9 +9,10 @@ Todo:
 1) Figure out socket library documentation --Done
 2) Have client connect and authenticate w/ passcode -- done
 3) Send Messages -- done
-4) have SERVER SEND MESSAGES --> Current TODO
-4) threading for multiple clients
-5) fancy text stuff
+4) have SERVER SEND MESSAGES -- done
+4) threading for multiple clients -- done
+5) fancy text stuff -- some done, TODO
+6) how to close cleanly on client side -- TODO
 
 Process:
 Server on -> client on -> client connect/authenticate =>

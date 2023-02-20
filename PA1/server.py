@@ -38,9 +38,9 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 connection.send("server-quit".encode())
                 connections[user].close()
                 del connections[user]
-                print("{} has left the chat".format(user))
+                print("{} left the chatroom".format(user))
                 sys.stdout.flush()
-                sendToClients(user, "{} has left the chat".format(user))
+                sendToClients(user, "{} left the chatroom".format(user))
                 break
             elif msg == ":)":
                 print("{}: [feeling happy]".format(user))
@@ -69,9 +69,9 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 sys.stdout.flush()
                 sendToClients(user, "{}: {}".format(user, msg[1:]))
             else:
-                print("{} says: {}".format(user, msg))
+                print("{}: {}".format(user, msg))
                 sys.stdout.flush()
-                sendToClients(user, "{} says: {}".format(user, msg))
+                sendToClients(user, "{}: {}".format(user, msg))
             #print("{}".format(message)) #prints message server side
 
             #rint(msg)

@@ -43,7 +43,7 @@ def main():
     sock.send(args.passcode.encode())
     res = sock.recv(1024).decode()
     if res == "bad":
-        print('Incorrect password')
+        print('Incorrect passcode')
         sys.stdout.flush()
     elif not res == "bad":
         print('Connected to {} on port {}'.format(args.host, args.port))

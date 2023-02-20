@@ -52,13 +52,22 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 sendToClients(user, "{}: [feeling sad]".format(user))
             elif msg == ":mytime":
                 today = datetime.now()
-                print("{}: {}".format(user, today.strftime("%C")))
+                print("{}: {}".format(user, today.strftime("%c")))
                 sys.stdout.flush()
-                sendToClients(user, "{}: {}".format(user, today.strftime("%C")))
+                sendToClients(user, "{}: {}".format(user, today.strftime("%c")))
+            elif msg == ":+1hr":
+                today = datetime.now()
+                if today.hour == 23:
+                    hour = 00
+                else:
+                    hour = today.hour + 1
+                print("{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
+                sys.stdout.flush()
+                sendToClients(user, "{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
             else:
-                print("{}: {}".format(user, msg))
+                print("{} says: {}".format(user, msg))
                 sys.stdout.flush()
-                sendToClients(user, "{}: {}".format(user, msg))
+                sendToClients(user, "{} says: {}".format(user, msg))
             #print("{}".format(message)) #prints message server side
 
             #rint(msg)

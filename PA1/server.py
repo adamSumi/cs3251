@@ -2,7 +2,7 @@ import socket
 import threading
 import sys
 import argparse
-from datetime import date, datetime
+from datetime import datetime, timedelta
 
 idx= 0
 messages = [] #[idx, message w/ user]
@@ -56,14 +56,11 @@ def clientCode(connection, ar, idx): # recieves messages from client, and checks
                 sys.stdout.flush()
                 sendToClients(user, "{}: {}".format(user, today.strftime("%c")))
             elif msg == ":+1hr":
-                today = datetime.now()
-                if today.hour == 23:
-                    hour = 00
-                else:
-                    hour = today.hour + 1
-                print("{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
+                plus_one = datetime.today()
+                plus_one = plus_one + timedelta(hours=1)
+                print("{}: {}".format(user, plus_one.strftime("%c")))
                 sys.stdout.flush()
-                sendToClients(user, "{}: {} {}{}".format(user, today.strftime("%a %b %d"), hour, today.strftime(":%M:%S %Y")))
+                sendToClients(user, "{}: {}".format(user, plus_one.strftime("%c")))
             elif msg[0] == "\\":
                 print("{}: {}".format(user, msg[1:]))
                 sys.stdout.flush()

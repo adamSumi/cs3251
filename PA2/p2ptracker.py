@@ -38,7 +38,7 @@ def runTracker(connection):
         data = connection.recv(1024).decode()
         if data.split(',')[0] == "LOCAL_CHUNKS":
             check_list.append(data.split(',')[1:])
-        if data.split(',')[0] == "WHERE_CHUNK":
+        if data.split(',')[0] == "WHERE_CHUNK": #looks through CHUNKLIST for file and chunk idx, sends back GET_CHUNK_FROM
             for item in check_list:
                 continue
 

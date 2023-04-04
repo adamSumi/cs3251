@@ -8,6 +8,7 @@ import logging
 
 ip_address = 'localhost'
 local_files = []
+requesting = False
 #TODO: Implement P2PClient that connects to P2PTracker
 
 def hashLocalFile(filename):
@@ -29,15 +30,10 @@ def readChunks(args): #in case we ever need to call it again after initializatio
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, 'localhost', str(args.transfer_port))
             chunk = lclchnks.readline().split(",")
 
-def sendTracker(connection,args):
+def recvTracker(connection, args):
     while True:
-        try:
-            message = input("")
-            if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
-                chunkLocation = whereChunk(connection, message.split(',')[1])
-
-def recvTracker(connection,args):
-    pass
+        if not requesting:
+            data = connection.recv(1024).decode()
 
 #WHERE_CHUNK -> COLLECT_CHUNK
 def whereChunk(tracker,idx):
@@ -49,6 +45,22 @@ def whereChunk(tracker,idx):
 
     dstInfo = find.split(",")
     return(dstInfo)
+
+def connectToClient(info):
+    pass
+
+def sendTracker(connection,args): #asks for chunk, looks for chunks, then automatically begins file transfer
+    while True:
+        try:
+            message = input("")
+            if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
+                requesting = True
+                chunkLocation = whereChunk(connection, message.split(',')[1])
+                connection.send("REQUEST_CHUNK,{}".format(message.split(',')[1]).encode())
+                source = connection.recv(1024).decode()
+                connectToClient(source)
+                requesting = False
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -75,9 +87,7 @@ def main():
             chunk = lclchnks.readline().split(",")
 
     s = threading.Thread(target=sendTracker, args=(tracker,args))
-    r = threading.Thread(target=recvTracker, args=(tracker,args))
     s.start()
-    r.start()
 
 
 

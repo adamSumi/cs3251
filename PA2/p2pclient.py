@@ -56,9 +56,9 @@ def sendTracker(connection,args): #asks for chunk, looks for chunks, then automa
             if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
                 requesting = True
                 chunkLocation = whereChunk(connection, message.split(',')[1])
-                connection.send("REQUEST_CHUNK,{}".format(message.split(',')[1]).encode())
-                source = connection.recv(1024).decode()
-                connectToClient(source)
+                #connection.send("REQUEST_CHUNK,{}".format(message.split(',')[1]).encode())
+                #source = connection.recv(1024).decode()
+                connectToClient(chunkLocation)
                 requesting = False
 
 

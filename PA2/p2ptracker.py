@@ -13,17 +13,17 @@ chunk_list = []
 #TODO: Implement P2PTracker
 #"LOCAL_CHUNKS,{chunk_index},{file_hash},{ip_addr},{transfer_port}"
 def checkHash(c1, c2):
-    if c1[3] == c2[3]:
+    if c1[2] == c2[2]:
         return True
     return False
 def checkLists():
     for i in range(len(check_list)):
         check_chunk = check_list[i]
-        chunkData = (check_chunk[1],check_chunk[2])
+        chunkData = (check_chunk[1],check_chunk[1])
         for j in range(len(check_list)):
             compChunk = check_list[j]
             #checks that we're not removing the comparison value, it's the same chunk, and it's the same file
-            if (not j == i) and (chunkData[0] == compChunk[0] and chunkData[1] == compChunk[1]) and checkHash(check_chunk, compChunk):
+            if (not j == i) and checkHash(check_chunk, compChunk):
                 chunk_list.append(check_chunk)
                 chunk_list.append(compChunk)
                 check_list.remove(check_chunk)

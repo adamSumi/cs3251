@@ -60,6 +60,7 @@ def sendTracker(connection,args): #asks for chunk, looks for chunks, then automa
                 #source = connection.recv(1024).decode()
                 connectToClient(chunkLocation)
                 requesting = False
+        except: break
 
 
 def main():

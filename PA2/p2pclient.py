@@ -6,7 +6,8 @@ import hashlib
 import time
 import logging
 
-
+ip_address = 'localhost'
+local_files = []
 #TODO: Implement P2PClient that connects to P2PTracker
 
 def hashLocalFile(filename):
@@ -19,7 +20,7 @@ def hashLocalFile(filename):
            h.update(chunk)
     return h.hexdigest()
 
-def readChunks(args):
+def readChunks(args): #in case we ever need to call it again after initialization?
     localchunks = "{}/localchunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
@@ -28,25 +29,26 @@ def readChunks(args):
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, 'localhost', str(args.transfer_port))
             chunk = lclchnks.readline().split(",")
 
-def collectChunk(idx, hash, ip1, port1, ip2, port2):
-    pass
+def sendTracker(connection,args):
+    while True:
+        try:
+            message = input("")
+            if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
+                chunkLocation = whereChunk(connection, message.split(',')[1])
 
-def sendChunk(idx, hash, ip1, port1, ip2, port2):
-    pass
-
-def recvTracker():
+def recvTracker(connection,args):
     pass
 
 #WHERE_CHUNK -> COLLECT_CHUNK
 def whereChunk(tracker,idx):
     tracker.send("WHERE_CHUNK,{}".format(idx).encode())
     find = tracker.recv(1024).decode()
-    while find == "CHUNK_LOCATION_UNKNOWN,{}".format(idx):
+    while find.split(',')[0] == "CHUNK_LOCATION_UNKNOWN":
         tracker.send("WHERE_CHUNK,{}".format(idx).encode())
         find = tracker.recv(1024).decode()
 
     dstInfo = find.split(",")
-    collectChunk(int(dstInfo[1]),dstInfo[2], dstInfo[3], int(dstInfo[4]), dstInfo[5], int(dstInfo[6]))
+    return(dstInfo)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -57,17 +59,25 @@ def main():
 
     tracker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tracker.connect(('localhost', 5100))
-
+    #Step 0: send client name
+    tracker.send("{}".format(args.name).encode())
     #Step 1: open localchunks.txt and figure out what files client has initially, then hash and send to tracker
     localchunks = "{}/localchunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
         while chunk[1] != 'LASTCHUNK':
             hashName = hashLocalFile(chunk[1])
-            chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, 'localhost', str(args.transfer_port))
+            chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, str(args.transfer_port))
+            local_files.append(chunkInfo)
             #SEND chunk to tracker here
+            tracker.send(chunkInfo.encode())
+
             chunk = lclchnks.readline().split(",")
 
+    s = threading.Thread(target=sendTracker, args=(tracker,args))
+    r = threading.Thread(target=recvTracker, args=(tracker,args))
+    s.start()
+    r.start()
 
 
 

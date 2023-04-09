@@ -15,3 +15,7 @@ Steps for PA2
 6. Asker intiates new socket, Queried accepts --TODO
 7. queried sends data, asker recieves --TODO
 8. C2C connection close --TODO
+
+
+Add followign funcitonality
+- Always check chunk_list first, if there add to chunk_list andstop, otherwise check check_list, if there are move both entities

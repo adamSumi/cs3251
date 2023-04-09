@@ -5,11 +5,21 @@ import sys
 import hashlib
 import time
 import logging
+import random
 
 ip_address = 'localhost'
 local_files = []
 requesting = False
 #TODO: Implement P2PClient that connects to P2PTracker
+tracker = None #P2PTracker
+transfer = None #transfer socket other clients connect to
+conn = None #requesting clent
+
+def monitorClientRequests(transfer):
+    transfer.listen()
+    while True:
+        connection, address = transfer.accept()
+        conn = connection
 
 def hashLocalFile(filename):
     h = hashlib.sha1()
@@ -28,6 +38,7 @@ def readChunks(args): #in case we ever need to call it again after initializatio
         while chunk[1] != 'LASTCHUNK':
             hashName = hashLocalFile(chunk[1])
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, 'localhost', str(args.transfer_port))
+            local_files.append(chunkInfo)
             chunk = lclchnks.readline().split(",")
 
 def recvTracker(connection, args):
@@ -47,7 +58,17 @@ def whereChunk(tracker,idx):
     return(dstInfo)
 
 def connectToClient(info):
-    pass
+    #info recieved as: GET_CHUNK_FROM,<chunk_index>,<file_hash>,<IP_address1>,<Port_number1>,<IP_address2>,<Port_number2>,...
+    info = info.split(",")
+    chunk = info[1]
+    fHash = info[2]
+    clients = [(info[k],int(info[k+1])) for k in range(3,len(info),2)]
+    grabClient = random.choice(clients)
+    req = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    req.connect((grabClient[0], grabClient[1]))
+    req.send("REQUEST_CHUNK,{}".format(chunk))
+    # grab all the data that req sends back until we're out and req closes the connection on their side
+
 
 def sendTracker(connection,args): #asks for chunk, looks for chunks, then automatically begins file transfer
     while True:
@@ -55,9 +76,7 @@ def sendTracker(connection,args): #asks for chunk, looks for chunks, then automa
             message = input("")
             if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
                 requesting = True
-                chunkLocation = whereChunk(connection, message.split(',')[1])
-                #connection.send("REQUEST_CHUNK,{}".format(message.split(',')[1]).encode())
-                #source = connection.recv(1024).decode()
+                chunkLocation = whereChunk(connection, message.split(','))
                 connectToClient(chunkLocation)
                 requesting = False
         except: break
@@ -66,12 +85,15 @@ def sendTracker(connection,args): #asks for chunk, looks for chunks, then automa
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-folder', required=True)
-    parser.add_argument('-transfer_port', required=True,type=str)
+    parser.add_argument('-transfer_port', required=True,type=int)
     parser.add_argument('-name', required=True)
     args = parser.parse_args()
 
     tracker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tracker.connect(('localhost', 5100))
+
+    transfer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #clients connect to this
+    transfer.bind(('localhost', args.transfer_port))
     #Step 0: send client name
     tracker.send("{}".format(args.name).encode())
     #Step 1: open localchunks.txt and figure out what files client has initially, then hash and send to tracker

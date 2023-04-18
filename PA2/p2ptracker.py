@@ -12,8 +12,14 @@ chunk_list = []
 
 #TODO: Implement P2PTracker
 #"LOCAL_CHUNKS,{chunk_index},{file_hash},{ip_addr},{transfer_port}"
-def findFiles(info): #returns list of IPs and transfer ports
-    pass
+def findFiles(chunk_index, chunk_hash): #returns list of IPs and transfer ports
+    found_files = "GET_CHUNK_FROM,{},{}".format(chunk_index, chunk_hash)
+    for item in chunk_list:
+       if item.split(",")[1].equals(chunk_index) and item.split(',')[2] == chunk_hash:
+           found_files.append("{},{}".format(item.split(",")[3], item.split(",")[4]))
+    if found_files.split(',').len() == 3:
+        found_files = "CHUNK_LOCATION_UNKNOWN,{}".format(chunk_index)
+    return found_files
 def checkHash(c1, c2):
     if c1[2] == c2[2]:
         return True
@@ -21,10 +27,11 @@ def checkHash(c1, c2):
 def checkSameFile():
     while True:
         for item in check_list:
-            if any(item[1] == chunk_item[1] for chunk_item in chunk_list):
+            # is this supposed to check index or hash?
+            if any(item[2] == chunk_item[2] for chunk_item in chunk_list):
                 chunk_list.append(item)
                 check_list.remove(item)
-            elif any(item[1] == check_item[1] for check_item in check_list if check_item != item):
+            elif any(item[2] == check_item[2] for check_item in check_list if check_item != item):
                 chunk_list.append(item)
                 check_list.remove(item)
     #check_hashes = [k[1] for k in check_list]
@@ -48,10 +55,11 @@ def runTracker(connection):
     while True:
         data = connection.recv(1024).decode()
         if data.split(',')[0] == "LOCAL_CHUNKS":
+            #we might run into a problem with this using split instead of tuples to store in check_list
             check_list.append(data.split(',')[1:])
         if data.split(',')[0] == "WHERE_CHUNK": #looks through CHUNKLIST for file and chunk idx, sends back GET_CHUNK_FROM
-            res = findFiles(data.split(',')[1]) #passing in a string for the chunk ID, not integer
-
+            req = findFiles(data.split(',')[1], data.split(',')[2]) #passing in a string for the chunk ID, not integer
+            connection.recv(1024).encode(req) #check this line
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

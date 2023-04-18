@@ -54,8 +54,8 @@ def whereChunk(tracker,idx):
         tracker.send("WHERE_CHUNK,{}".format(idx).encode())
         find = tracker.recv(1024).decode()
 
-    dstInfo = find.split(",")
-    return(dstInfo)
+    #dstInfo = find.split(",")
+    return(find)
 
 def connectToClient(info):
     #info recieved as: GET_CHUNK_FROM,<chunk_index>,<file_hash>,<IP_address1>,<Port_number1>,<IP_address2>,<Port_number2>,...
@@ -76,9 +76,14 @@ def sendTracker(connection,args): #asks for chunk, looks for chunks, then automa
             message = input("")
             if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
                 requesting = True
-                chunkLocation = whereChunk(connection, message.split(','))
-                connectToClient(chunkLocation)
+                chunkLocations = whereChunk(connection, message.split(',')[1])
                 requesting = False
+                return chunkLocations
+                #connectToClient(chunkLocation)
+            if message.split(",")[0] == "REQUEST_CHUNK":
+                requesting = True
+                chunkLocationsToSend = whereChunk(connection, message.split(',')[1])
+                connectToClient(chunkLocationsToSend)
         except: break
 
 
@@ -108,6 +113,9 @@ def main():
             tracker.send(chunkInfo.encode())
 
             chunk = lclchnks.readline().split(",")
+
+            #after updating the list, we need to ask for other file chunks
+            # sendTracker(connection, args) or something
 
     s = threading.Thread(target=sendTracker, args=(tracker,args))
     s.start()

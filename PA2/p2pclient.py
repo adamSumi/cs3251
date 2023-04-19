@@ -29,8 +29,10 @@ def monitorClientRequests(transfer):
         connection, address = transfer.accept()
         conn = connection
 
-def hashLocalFile(filename):
+def hashLocalFile(args, filename):
     h = hashlib.sha1()
+    if "\n" in filename:
+        filename = args.folder + "/" + filename[:-1]
     with open(filename,'rb') as file:
         chunk = 0
         while chunk != b'':
@@ -110,14 +112,14 @@ def main():
     #Step 0: send client name
     tracker.send("{}".format(args.name).encode())
     #Step 1: open localchunks.txt and figure out what files client has initially, then hash and send to tracker
-    localchunks = "{}/localchunks.txt".format(args.folder)
+    localchunks = "{}/local_chunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
         while chunk[1] != 'LASTCHUNK':
-            hashName = hashLocalFile(chunk[1])
+            hashName = hashLocalFile(args, chunk[1])
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, str(args.transfer_port))
             local_files.append(chunkInfo)
-            #SEND chunk to tracker here
+            print(chunkInfo)#SEND chunk to tracker here
             tracker.send(chunkInfo.encode())
 
             chunk = lclchnks.readline().split(",")

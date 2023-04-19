@@ -19,17 +19,18 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 #TODO: Implement P2PTracker
 #"LOCAL_CHUNKS,{chunk_index},{file_hash},{ip_addr},{transfer_port}"
-def findFiles(chunk_index): #returns list of IPs and transfer ports
-    found_files = "GET_CHUNK_FROM,{},{}".format(chunk_index)
+#def findFiles(chunk_index): #returns list of IPs and transfer ports
+def findFiles(chunk_index):
+    chunk_list_ips = ["GET_CHUNK_FROM"]
     for item in chunk_list:
-       if item.split(",")[1].equals(chunk_index):
-           found_files.append("{},{}".format(item.split(",")[3], item.split(",")[4]))
-    if found_files.split(',').len() == 3:
-        found_files = "CHUNK_LOCATION_UNKNOWN,{}".format(chunk_index)
+        item_index, item_hash, item_ip, item_port = item.split(',')
+        if item_index == chunk_index:
+            chunk_list_ips.append(f"{item_ip},{item_port}")
 
-    logMessage = "P2PTracker,{}".format(found_files)
-    logger.info(logMessage)
-    return found_files
+    if len(chunk_list_ips) == 1:
+        return "CHUNK_UNAVAILABLE,{}".format(chunk_index)
+    else:
+        return ','.join(chunk_list_ips)
 
 def checkHash(c1, c2):
     if c1[2] == c2[2]:
@@ -72,12 +73,15 @@ def runTracker(connection):
     connections[username] = connection
     while True:
         data = connection.recv(1024).decode()
-        if data.split(',')[0] == "LOCAL_CHUNKS":
-            #we might run into a problem with this using split instead of tuples to store in check_list
-            check_list.append(data.split(',')[1:])
+        split_data = data.split(",")
+        if split_data[0] == "LOCAL_CHUNKS":
+            #we might run into a problem with this using split instead of tuples to store in check_lis
+            check_list.append(",".join(data.split(',')[1:]))
+
         if data.split(',')[0] == "WHERE_CHUNK": #looks through CHUNKLIST for file and chunk idx, sends back GET_CHUNK_FROM
             req = findFiles(data.split(',')[1]) #passing in a string for the chunk ID, not integer
-            connection.recv(1024).encode(req) #check this line
+            logger.info("P2PTracker,{}".format(req))
+            connection.send(req.encode()) #check this line
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,7 +96,7 @@ def main():
 
     while True:
         connection, address = sock.accept()
-        t = threading.Thread(target=runTracker, args=(connection))
+        t = threading.Thread(target=lambda: runTracker(connection))
         threads.append(t)
         t.start()
 

@@ -15,6 +15,14 @@ tracker = None #P2PTracker
 transfer = None #transfer socket other clients connect to
 conn = None #requesting clent
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('logs.log')
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 def monitorClientRequests(transfer):
     transfer.listen()
     while True:

@@ -17,6 +17,7 @@ handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
 #TODO: Implement P2PTracker
 #"LOCAL_CHUNKS,{chunk_index},{file_hash},{ip_addr},{transfer_port}"
 #def findFiles(chunk_index): #returns list of IPs and transfer ports
@@ -37,27 +38,49 @@ def checkHash(c1, c2):
         return True
     return False
 def checkSameFile():
-    first_index_set = set()
-    if chunk_list:
-        first_index_set = {item.split(',')[0] for item in chunk_list}
+    while True:
+        for item in check_list:
+            move = False
+            tupleItem = item.split(",")
+            for otherItem in check_list:
+                if item != otherItem:
+                    tOtherItem = otherItem.split(",")
+                    if tupleItem[0] == tOtherItem[0] and checkHash(tupleItem[1],tOtherItem[1]):
+                        move = True
 
-    check_list_pairs = []
-    for i in range(len(check_list)):
-        for j in range(i + 1, len(check_list)):
-            if check_list[i].split(',')[0] == check_list[j].split(',')[0]:
-                check_list_pairs.append((check_list[i], check_list[j]))
+            for otherItem in chunk_list:
+                if item != otherItem:
+                    tOtherItem = otherItem.split(",")
+                    if tupleItem[0] == tOtherItem[0] and checkHash(tupleItem[1],tOtherItem[1]):
+                        move = True
 
-    for item in check_list:
-        item_index, item_hash = item.split(',')[0], item.split(',')[1]
-        if item_index in first_index_set and (not chunk_list or checkHash(item_hash, chunk_list[0].split(',')[1])):
-            chunk_list.append(item)
-        for pair in check_list_pairs:
-            if item in pair and all(p in check_list for p in pair):
-                pair_hashes = [p.split(',')[1] for p in pair]
-                if all(checkHash(pair_hashes[0], h) for h in pair_hashes):
-                    chunk_list.extend(pair)
-                    for p in pair:
-                        check_list.remove(p)
+            if move:
+                chunk_list.append(item)
+                check_list.remove(item)
+#------------------
+
+        #first_index_set = set()
+        #if chunk_list:
+        #    first_index_set = {item.split(',')[0] for item in chunk_list}
+
+        #check_list_pairs = []
+        #for i in range(len(check_list)):
+        #    for j in range(i + 1, len(check_list)):
+        #        if check_list[i].split(',')[0] == check_list[j].split(',')[0]:
+        #            check_list_pairs.append((check_list[i], check_list[j]))
+
+        #for item in check_list:
+        #    item_index, item_hash = item.split(',')[0], item.split(',')[1]
+        #    if item_index in first_index_set and (not chunk_list or checkHash(item_hash, chunk_list[0].split(',')[1])):
+        #        chunk_list.append(item)
+        #    for pair in check_list_pairs:
+        #        if item in pair and all(p in check_list for p in pair):
+        #            pair_hashes = [p.split(',')[1] for p in pair]
+        #            if all(checkHash(pair_hashes[0], h) for h in pair_hashes):
+        #                chunk_list.extend(pair)
+        #                for p in pair:
+        #                    check_list.remove(p)
+
     #while True:
     #    for item in check_list:
     #        # is this supposed to check index or hash?

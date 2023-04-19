@@ -115,7 +115,7 @@ def main():
     localchunks = "{}/local_chunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
-        while chunk[1] != 'LASTCHUNK':
+        while chunk[1].strip() != 'LASTCHUNK':
             hashName = hashLocalFile(args, chunk[1])
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, str(args.transfer_port))
             local_files.append(chunkInfo)

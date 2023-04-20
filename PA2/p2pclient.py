@@ -110,14 +110,13 @@ def main():
     transfer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #clients connect to this
     transfer.bind(('localhost', args.transfer_port))
     #Step 0: send client name
-    tracker.send("{}".format(args.name).encode())
     #Step 1: open localchunks.txt and figure out what files client has initially, then hash and send to tracker
     localchunks = "{}/local_chunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
         while chunk[1].strip() != 'LASTCHUNK':
             hashName = hashLocalFile(args, chunk[1])
-            chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, str(args.transfer_port))
+            chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, args.transfer_port)
             local_files.append(chunkInfo)
             print(chunkInfo)#SEND chunk to tracker here
             tracker.send(chunkInfo.encode())

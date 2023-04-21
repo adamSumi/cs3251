@@ -151,6 +151,8 @@ def handleTracker(conn, args,needed_chunks):
                 current_chunks.append(search_idx)
                 #print(current_chunks)
                 chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(search_idx, newFileHash, ip_address, args.transfer_port)
+                conn.send(chunkInfo.encode())
+                time.sleep(1)
                 logger.debug("{},{}".format(args.name, chunkInfo))
 
                 for i in current_chunks:

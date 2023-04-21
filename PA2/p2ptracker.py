@@ -90,7 +90,7 @@ def main():
 
 
     debug = threading.Thread(target = debugThread, args = ())
-    debug.start()
+    #debug.start()
     cl = threading.Thread(target = manageLists, args=())
     cl.start()
     while True:

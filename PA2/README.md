@@ -2,5 +2,5 @@
 Spring 2023
 
 Contributors:
-Adam Sumilong (adamsumi@gatech.edu)
-Gabby Calderon (gcalderon7@gatech.edu)
+Section A: Adam Sumilong   -- GTID: 903479758 (adamsumi@gatech.edu)
+Section B: Gabby Calderon  -- GTID: _________ (gcalderon7@gatech.edu)

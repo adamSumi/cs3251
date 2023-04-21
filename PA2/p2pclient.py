@@ -18,83 +18,115 @@ conn = None #requesting clent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler('logs.log')
-handler.setLevel(logging.INFO)
+handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-def monitorClientRequests(transfer):
-    transfer.listen()
+current_chunks = []
+needed_chunks = []
+num_needed = 0
+
+def debugThread():
     while True:
-        connection, address = transfer.accept()
-        conn = connection
+        for file in local_files:
+            print(file[0])
+        print("---------")
+        time.sleep(3)
 
 def hashLocalFile(args, filename):
+    index = filename[0]
+    filename = filename[1]
     h = hashlib.sha1()
-    if "\n" in filename:
-        filename = args.folder + "/" + filename[:-1]
+    filename = args.folder + "/" + filename
     with open(filename,'rb') as file:
         chunk = 0
+        data = []
         while chunk != b'':
            # read only 1024 bytes at a time
            chunk = file.read(1024)
+           data.append(chunk)
            h.update(chunk)
+        local_files.append((int(index),filename,data))
     return h.hexdigest()
 
-def readChunks(args): #in case we ever need to call it again after initialization?
-    localchunks = "{}/localchunks.txt".format(args.folder)
-    with open(localchunks) as lclchnks:
-        chunk = lclchnks.readline().split(",")
-        while chunk[1] != 'LASTCHUNK':
-            hashName = hashLocalFile(chunk[1])
-            chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, 'localhost', str(args.transfer_port))
-            local_files.append(chunkInfo)
-            chunk = lclchnks.readline().split(",")
+def hashFileFromList(info):
+    h = hashlib.sha1()
+    chunk = 0
+    data = []
+    for line in info:
+        h.update(line)
+    return h.hexdigest()
 
-def recvTracker(connection, args):
+def sendChunk(sock):
     while True:
-        if not requesting:
-            data = connection.recv(1024).decode()
+        connection, address = sock.accept()
 
-#WHERE_CHUNK -> COLLECT_CHUNK
-def whereChunk(tracker,idx):
-    tracker.send("WHERE_CHUNK,{}".format(idx).encode())
-    find = tracker.recv(1024).decode()
-    while find.split(',')[0] == "CHUNK_LOCATION_UNKNOWN":
-        tracker.send("WHERE_CHUNK,{}".format(idx).encode())
-        find = tracker.recv(1024).decode()
+        chunk_idx = int(connection.recv(1024).decode().split(",")[1])
+        search_file = None
+        for file in local_files:
+            if file[0] == chunk_idx:
+                search_file = file
+                break
 
-    #dstInfo = find.split(",")
-    return(find)
+        connection.send(search_file[1].encode())
 
-def connectToClient(info):
-    #info recieved as: GET_CHUNK_FROM,<chunk_index>,<file_hash>,<IP_address1>,<Port_number1>,<IP_address2>,<Port_number2>,...
-    info = info.split(",")
-    chunk = info[1]
-    fHash = info[2]
-    clients = [(info[k],int(info[k+1])) for k in range(3,len(info),2)]
-    grabClient = random.choice(clients)
-    req = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    req.connect((grabClient[0], grabClient[1]))
-    req.send("REQUEST_CHUNK,{}".format(chunk))
-    # grab all the data that req sends back until we're out and req closes the connection on their side
+        for batch in search_file[2]:
+            connection.send(batch)
 
+        connection.close()
 
-def sendTracker(connection,args): #asks for chunk, looks for chunks, then automatically begins file transfer
+def handleTracker(conn, args):
+    #time.sleep(8)
+    #conn.send("WHERE_CHUNK,2".encode())
+    #time.sleep(1)
+    #print(conn.recv(1024).decode())
     while True:
-        try:
-            message = input("")
-            if message.split(",")[0] == "WHERE_CHUNK": #initial ask of where_chunk, if it can't find it whereChunk asks again automatically
-                requesting = True
-                chunkLocations = whereChunk(connection, message.split(',')[1])
-                requesting = False
-                return chunkLocations
-                #connectToClient(chunkLocation)
-            if message.split(",")[0] == "REQUEST_CHUNK":
-                requesting = True
-                chunkLocationsToSend = whereChunk(connection, message.split(',')[1])
-                connectToClient(chunkLocationsToSend)
-        except: break
+        for i in current_chunks:
+            if i in needed_chunks:
+                needed_chunks.remove(i)
+
+        idx = 0
+        while len(needed_chunks) > 0:
+            idx = idx % len(needed_chunks)
+            search_idx = needed_chunks[idx]
+            conn.send("WHERE_CHUNK,{}".format(search_idx).encode())
+            time.sleep(1)
+            logger.debug("{},WHERE_CHUNK,{}".format(args.name, search_idx))
+
+            result = conn.recv(1024).decode() #As either CHUNK_LOCATION_UNKNOWN,<> || GET_CHUNK_FROM,<>,<>,{ip},{port},{ip},{port}...
+            print(result)
+            if result.split(",")[0] == "CHUNK_LOCATION_UNKNOWN":
+                idx += 1
+                continue
+            else:
+                header = result.split(",")[0:3] # GET_CHUNK_FROM,{search_idx},{file_hash}
+                result = result.split(",")[3:]
+                vendors = [(result[i],int(result[i+1])) for i in range(0, len(result)-1, 2)]
+                chosen_vendor = random.choice(vendors)
+
+                file_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                file_socket.connect(chosen_vendor)
+
+                file_socket.send("REQUEST_CHUNK,{}".format(search_idx))
+                logger.debug("{},REQUEST_CHUNK,{},{},{}".format(args.name, search_idx, chosen_vendor[0],chosen_vendor[1]))
+
+                file_name = file_socket.recv(1024).decode()
+                #print(file_name)
+                data = []
+                while True:
+                    packet = file_socket.recv(1024)
+                    if not packet:
+                        break
+                    data.append(packet)
+
+                newFileHash = hashFileFromList(data)
+                local_files.append((search_idx, file_name, data))
+                current_chunks.append(search_idx)
+                chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(search_idx, newFileHash, ip_address, args.transfer_port)
+                logger.debug("{},{}".format(args.name, chunkInfo))
+
+
 
 
 def main():
@@ -107,30 +139,42 @@ def main():
     tracker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tracker.connect(('localhost', 5100))
 
-    transfer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #clients connect to this
-    transfer.bind(('localhost', args.transfer_port))
-    #Step 0: send client name
-    #Step 1: open localchunks.txt and figure out what files client has initially, then hash and send to tracker
+    debug = threading.Thread(target = debugThread, args = ())
+    #debug.start()
     localchunks = "{}/local_chunks.txt".format(args.folder)
     with open(localchunks) as lclchnks:
         chunk = lclchnks.readline().split(",")
-        while chunk[1].strip() != 'LASTCHUNK':
-            hashName = hashLocalFile(args, chunk[1])
+        chunk[1] = chunk[1].strip()
+        while chunk[1] != 'LASTCHUNK':
+            hashName = hashLocalFile(args, chunk)
             chunkInfo = "LOCAL_CHUNKS,{},{},{},{}".format(chunk[0], hashName, ip_address, args.transfer_port)
-            local_files.append(chunkInfo)
-            print(chunkInfo)#SEND chunk to tracker here
+            logger.debug("{},{}".format(args.name, chunkInfo))
+            current_chunks.append(int(chunk[0]))
+            #print(chunkInfo)
             tracker.send(chunkInfo.encode())
+            time.sleep(1)
 
             chunk = lclchnks.readline().split(",")
+            chunk[1] = chunk[1].strip()
 
-            #after updating the list, we need to ask for other file chunks
-            # sendTracker(connection, args) or something
+            if chunk[1] == "LASTCHUNK":
+                num_needed = int(chunk[0])
+                chunks_needed = [range(1,num_needed + 1)]
 
-    s = threading.Thread(target=sendTracker, args=(tracker,args))
-    s.start()
+        s = threading.Thread(target=handleTracker, args=(tracker,args))
+        s.start()
 
-
-
-
+        transfer = socket.socket()
+        transfer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        transfer.bind((ip_address,args.transfer_port))
+        transfer.listen(1)
+        sc =threading.Thread(target=sendChunk(transfer))
+        sc.start()
 if __name__ == "__main__":
 	main()
+
+
+#LOG MESSAGE FORMATS
+#<client_name>,LOCAL_CHUNKS,<chunk_index>,<file_hash>,<IP_address>,<Port_number>
+#<client_name>,WHERE_CHUNK,<chunk_index>
+#<client_name>,REQUEST_CHUNK,<chunk_index>,<IP_address>,<Port_number>

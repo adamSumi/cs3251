@@ -56,11 +56,11 @@ def findChunk(conn, chunk_idx, chunk_list):
 
     if not found:
         conn.send("CHUNK_LOCATION_UNKNOWN,{}".format(chunk_idx).encode())
-
+        print("bad")
         logger.debug("P2PTracker,CHUNK_LOCATION_UNKNOWN,{}".format(chunk_idx))
     else:
         conn.send(string.encode())
-
+        print(string)
         logger.debug("P2PTracker,{}".format(string))
 
 
@@ -90,7 +90,7 @@ def main():
 
 
     debug = threading.Thread(target = debugThread, args = ())
-    #debug.start()
+    debug.start()
     cl = threading.Thread(target = manageLists, args=())
     cl.start()
     while True:

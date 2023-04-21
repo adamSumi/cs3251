@@ -56,11 +56,11 @@ def findChunk(conn, chunk_idx, chunk_list):
 
     if not found:
         conn.send("CHUNK_LOCATION_UNKNOWN,{}".format(chunk_idx).encode())
-        print("bad")
+        #print("bad")
         logger.debug("P2PTracker,CHUNK_LOCATION_UNKNOWN,{}".format(chunk_idx))
     else:
         conn.send(string.encode())
-        print(string)
+        #print(string)
         logger.debug("P2PTracker,{}".format(string))
 
 
